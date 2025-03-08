@@ -53,6 +53,7 @@ public class Main {
 
             default:
                 System.out.println("Unknown command: " + args[0]);
+                System.out.println("Available actions: add, update, delete, list, mark-done, mark-in-progress");
         }
     }
 }
