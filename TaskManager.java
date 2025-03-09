@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -15,18 +16,29 @@ public class TaskManager {
 
     // Loads tasks from the JSON file or returns an empty list
     private List<Task> loadTasks() {
-        if (!Files.exists(TASK_FILE)) {
+        List<Task> stored_tasks = new ArrayList<>();
+
+        if (!Files.exists(TASK_FILE)){
             return new ArrayList<>();
         }
 
         try {
-            String content = Files.readString(TASK_FILE);
-            return Task.fromJsonList(content); // Parses JSON to List<Task>
-        } 
-        catch (IOException e) {
+            String jsonContent = Files.readString(TASK_FILE);
+            String[] taskList = jsonContent.replace("[", "")
+                                            .replace("]", "")
+                                            .split("},");
+            for (String taskJson : taskList){
+                if (!taskJson.endsWith("}")){
+                    taskJson = taskJson + "}";
+                    stored_tasks.add(Task.fromJson(taskJson));
+                } else {
+                    stored_tasks.add(Task.fromJson(taskJson));
+                }
+            }
+        } catch (IOException e){
             e.printStackTrace();
-            return new ArrayList<>();
         }
+        return stored_tasks;
     }
 
     // Saves tasks back to the JSON file
@@ -52,7 +64,9 @@ public class TaskManager {
     // Adds a new task and saves it
     public void addTask(String description) {
         int id = tasks.size() + 1;
-        Task task = new Task(id, description);
+        String status = "TODO";
+        String now = LocalDateTime.now().toString();
+        Task task = new Task(id, description, status, now, now);
         tasks.add(task);
         saveTasks();
         System.out.println("Task added: " + description);
@@ -102,7 +116,7 @@ public class TaskManager {
     // Lists all tasks or by status (todo, done, in-progress)
     public void listTasks(String type){
         for (Task task : tasks){
-            String status = task.getStatus().strip();
+            String status = task.getStatus().toString();
 
             // Check if "All" is given or status matches (case-insensitive)
             if (type.equalsIgnoreCase("All") || status.equalsIgnoreCase(type)){
