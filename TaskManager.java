@@ -30,12 +30,21 @@ public class TaskManager {
     }
 
     // Saves tasks back to the JSON file
-    private void saveTasks() {
+    public void saveTasks(){
+        StringBuilder sb = new StringBuilder();
+        sb.append("[\n");
+        for (int i = 0; i < tasks.size(); i++){
+            sb.append(tasks.get(i).toJson());
+            if (i < tasks.size() - 1){
+                sb.append(",\n");
+            }
+        }
+        sb.append("\n]");
+
+        String jsonContent = sb.toString();
         try {
-            String json = Task.toJsonList(tasks);
-            Files.writeString(TASK_FILE, json);
-        } 
-        catch (IOException e) {
+            Files.writeString(TASK_FILE, jsonContent);
+        } catch (IOException e){
             e.printStackTrace();
         }
     }
@@ -52,7 +61,7 @@ public class TaskManager {
     // Updates a task's description after validating the input
     public void updateTask(String id, String newDescription){
         if (newDescription == null || newDescription.isBlank()) {
-        throw new IllegalArgumentException("New description cannot be empty.");
+            throw new IllegalArgumentException("New description cannot be empty.");
     }
 
     Task task = findTask(id).orElseThrow(() -> 
@@ -93,7 +102,7 @@ public class TaskManager {
     // Lists all tasks or by status (todo, done, in-progress)
     public void listTasks(String type){
         for (Task task : tasks){
-            String status = task.getStatus().toString().strip();
+            String status = task.getStatus().strip();
 
             // Check if "All" is given or status matches (case-insensitive)
             if (type.equalsIgnoreCase("All") || status.equalsIgnoreCase(type)){
@@ -112,7 +121,7 @@ public class TaskManager {
         try {
             int taskId = Integer.parseInt(id);
             return tasks.stream()
-                        .filter(task -> task.getId().equals(taskId))
+                        .filter(task -> task.getId() == taskId)
                         .findFirst();
         } 
         catch (NumberFormatException e) {
