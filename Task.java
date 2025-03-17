@@ -2,83 +2,80 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class Task {
+    private static int lastId = 0;  // Static variable to keep track of the last ID assigned
     private int id;
     private String description;
-    private Status status; // "todo", "in-progress", "done"
+    private Status status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-     // DateTimeFormatter for serializing/deserializing dates
-     private static final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+    // DateTimeFormatter for serializing/deserializing dates
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
-     public enum Status {
-        TODO, IN_PROGRESS, DONE
-    }
-    
-
-    public Task(int id, String description, String status, String createdAt, String updatedAt) {
-        this.id = id;
+    public Task(String description) {
+        this.id = ++lastId;
         this.description = description;
-        this.status = Status.TODO; // Default status
+        this.status = Status.TODO;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
 
-    // Method to update the task description and timestamp
-    public void updateDescription(String newDescription) {
-        if (newDescription == null || newDescription.isBlank()) {
-            throw new IllegalArgumentException("Description cannot be empty!");
-        }
-        this.description = newDescription;
-        this.updatedAt = LocalDateTime.now();
+    public int getId() {
+        return id;
     }
 
-    // Method to mark as "in-progress"
     public void markInProgress() {
         this.status = Status.IN_PROGRESS;
         this.updatedAt = LocalDateTime.now();
     }
 
-    // Method to mark as "done"
     public void markDone() {
         this.status = Status.DONE;
         this.updatedAt = LocalDateTime.now();
     }
 
-    // Getters for accessing fields
-    public int getId() {
-        return id;
+    public void updateDescription(String description) {
+        this.description = description;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public String toJson() {
+        return "{\"id\":\"" + id + "\", \"description\":\"" + description.strip() + "\", \"status\":\"" + status.toString() +
+                "\", \"createdAt\":\"" + createdAt.format(formatter) + "\", \"updatedAt\":\"" + updatedAt.format(formatter) + "\"}";
+    }
+
+    public static Task fromJson(String json) {
+        json = json.replace("{", "").replace("}", "").replace("\"", "");
+        String[] json1 = json.split(",");
+
+        String id = json1[0].split(":")[1].strip();
+        String description = json1[1].split(":")[1].strip();
+        String statusString = json1[2].split(":")[1].strip();
+        String createdAtStr = json1[3].split("[a-z]:")[1].strip();
+        String updatedAtStr = json1[4].split("[a-z]:")[1].strip();
+
+        Status status = Status.valueOf(statusString.toUpperCase().replace(" ", "_"));
+
+        Task task = new Task(description);
+        task.id = Integer.parseInt(id);
+        task.status = status;
+        task.createdAt = LocalDateTime.parse(createdAtStr, formatter);
+        task.updatedAt = LocalDateTime.parse(updatedAtStr, formatter);
+
+        if (Integer.parseInt(id) > lastId) {
+            lastId = Integer.parseInt(id);
+        }
+
+        return task;
     }
 
     public Status getStatus() {
         return status;
     }
 
-    public String toJson() {
-        return "{"
-            + "\"id\":" + id + ", "
-            + "\"description\":\"" + description.strip() + "\", "
-            + "\"status\":\"" + status + "\", "
-            + "\"createdAt\":\"" + createdAt.format(formatter) + "\", "
-            + "\"updatedAt\":\"" + updatedAt.format(formatter) + "\""
-            + "}";
-    }
-
-    public static Task fromJson(String json) {
-        String[] parts = json.replace("{", "").replace("}", "").split(",");
-        int id = Integer.parseInt(parts[0].split(":")[1].trim());
-        String description = parts[1].split(":")[1].replace("\"", "").trim();
-        String status = parts[2].split(":")[1].replace("\"", "").trim();
-        String createdAt = parts[3].split(":")[1].replace("\"", "").trim();
-        String updatedAt = parts[4].split(":")[1].replace("\"", "").trim();
-        return new Task(id, description, status, createdAt, updatedAt);
-    }
-    
-
-
-
     @Override
     public String toString() {
-        return "Task{id=" + id + ", description='" + description + "', status='" + status + "', createdAt='" + createdAt + "', updatedAt='" + updatedAt + "'}";
+        return "id: " + id + ", description: " + description.strip() + ", status: " + status.toString() +
+                ", createdAt: " + createdAt.format(formatter) + ", updatedAt: " + updatedAt.format(formatter);
     }
 }

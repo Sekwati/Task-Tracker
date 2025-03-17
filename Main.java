@@ -1,6 +1,7 @@
 
 public class Main {
     public static void main(String[] args) {
+        TaskManager taskManager = new TaskManager();
         // Step 1: Ensure the user provides a command
         if (args.length == 0) {
             System.out.println("Usage: task-cli <command> [options]");
@@ -15,6 +16,7 @@ public class Main {
                     System.out.println("Usage: task-cli add <task_description>");
                     return;
                 }
+                taskManager.addTask(args[1]);
                 System.out.println("Task added successfully");
                 break;
 
@@ -23,6 +25,7 @@ public class Main {
                     System.out.println("Usage: task-cli update <id> <new description>");
                     return;
                 }
+                taskManager.updateTask(args[1], args[2]);
                 System.out.println("Task updated successfully (ID: " + args[1] + ")");
                 break;
 
@@ -31,6 +34,7 @@ public class Main {
                     System.out.println("Usage: task-cli delete <id>");
                     return;
                 }
+                taskManager.deleteTask(args[1]);
                 System.out.println("Task deleted successfully (ID: " + args[1] + ")");
                 break;
 
@@ -39,6 +43,7 @@ public class Main {
                     System.out.println("Usage: task-cli mark-in-progress <id>");
                     return;
                 }
+                taskManager.markInProgress(args[1]);
                 System.out.println("Task marked as in progress (ID: " + args[1] + ")");
                 break;
 
@@ -47,9 +52,24 @@ public class Main {
                     System.out.println("Usage: task-cli mark-done <id>");
                     return;
                 }
+                taskManager.markDone(args[1]);
                 System.out.println("Task marked as done (ID: " + args[1] + ")");
                 break;
 
+                case "list":
+                if (args.length < 2) {
+                    taskManager.listTasks("All");
+                } else {
+                    Status filterStatus;
+                    try {
+                        filterStatus = Status.valueOf(args[1].toUpperCase().replace("-", "_"));
+                    } catch (IllegalArgumentException e) {
+                        System.out.println("Invalid status: " + args[1]);
+                        return;
+                    }
+                    taskManager.listTasks(filterStatus.toString());
+                }
+                break;
 
             default:
                 System.out.println("Unknown command: " + args[0]);

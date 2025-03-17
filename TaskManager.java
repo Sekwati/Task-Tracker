@@ -1,29 +1,29 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 public class TaskManager {
-    private static final Path TASK_FILE = Path.of("tasks.json");
+    private final Path FILE_PATH = Path.of("tasks.json");
     private List<Task> tasks;
-    
-    public TaskManager() {
+
+
+    public TaskManager(){
         this.tasks = loadTasks();
     }
 
-    // Loads tasks from the JSON file or returns an empty list
-    private List<Task> loadTasks() {
+    /* read tasks.json file */
+    private List<Task> loadTasks(){
         List<Task> stored_tasks = new ArrayList<>();
 
-        if (!Files.exists(TASK_FILE)){
+        if (!Files.exists(FILE_PATH)){
             return new ArrayList<>();
         }
 
         try {
-            String jsonContent = Files.readString(TASK_FILE);
+            String jsonContent = Files.readString(FILE_PATH);
             String[] taskList = jsonContent.replace("[", "")
                                             .replace("]", "")
                                             .split("},");
@@ -41,7 +41,6 @@ public class TaskManager {
         return stored_tasks;
     }
 
-    // Saves tasks back to the JSON file
     public void saveTasks(){
         StringBuilder sb = new StringBuilder();
         sb.append("[\n");
@@ -55,93 +54,50 @@ public class TaskManager {
 
         String jsonContent = sb.toString();
         try {
-            Files.writeString(TASK_FILE, jsonContent);
+            Files.writeString(FILE_PATH, jsonContent);
         } catch (IOException e){
             e.printStackTrace();
         }
     }
 
-    // Adds a new task and saves it
-    public void addTask(String description) {
-        int id = tasks.size() + 1;
-        String status = "TODO";
-        String now = LocalDateTime.now().toString();
-        Task task = new Task(id, description, status, now, now);
-        tasks.add(task);
-        saveTasks();
-        System.out.println("Task added: " + description);
+    public void addTask(String description){
+        Task new_task = new Task(description);
+        tasks.add(new_task);
+        System.out.println("Task added successfully (ID: " + new_task.getId() + ")");
     }
 
-    // Updates a task's description after validating the input
-    public void updateTask(String id, String newDescription){
-        if (newDescription == null || newDescription.isBlank()) {
-            throw new IllegalArgumentException("New description cannot be empty.");
+    public void updateTask(String id, String new_description){
+        Task task = findTask(id).orElseThrow(() -> new IllegalArgumentException("Task with ID " + id + " not found!"));
+        task.updateDescription(new_description);
     }
 
-    Task task = findTask(id).orElseThrow(() -> 
-        new IllegalArgumentException("Task with ID " + id + " not found!")
-    );
-
-    task.updateDescription(newDescription);
-    saveTasks(); // Ensure changes persist
+    public void deleteTask(String id){
+        Task task = findTask(id).orElseThrow(() -> new IllegalArgumentException("Task with ID " + id + " not found!"));
+        tasks.remove(task);
     }
 
-    // Deletes a task safely
-    public void deleteTask(String id) {
-        Task task = findTask(id).orElseThrow(() -> 
-            new IllegalArgumentException("Task with ID " + id + " not found!"));
-
-    tasks.remove(task);
-    saveTasks(); // Persist deletion
+    public void markInProgress(String id){
+        Task task = findTask(id).orElseThrow(() -> new IllegalArgumentException("Task with ID " + id + " not found!"));
+        task.markInProgress();
     }
 
-    // Marks a task as "in-progress"
-    public void markInProgress(String id) {
-        Task task = findTask(id).orElseThrow(() -> 
-            new IllegalArgumentException("Task with ID " + id + " not found!"));
-
-    task.markInProgress();
-    saveTasks(); // Save updated status
+    public void markDone(String id){
+        Task task = findTask(id).orElseThrow(() -> new IllegalArgumentException("Task with ID " + id + " not found!"));
+        task.markDone();
     }
 
-    // Marks a task as "done"
-    public void markDone(String id) {
-        Task task = findTask(id).orElseThrow(() -> 
-            new IllegalArgumentException("Task with ID " + id + " not found!"));
-
-    task.markDone();
-    saveTasks(); // Ensure it's recorded
-}
-
-    // Lists all tasks or by status (todo, done, in-progress)
     public void listTasks(String type){
         for (Task task : tasks){
-            String status = task.getStatus().toString();
-
-            // Check if "All" is given or status matches (case-insensitive)
-            if (type.equalsIgnoreCase("All") || status.equalsIgnoreCase(type)){
+            String status = task.getStatus().toString().strip();
+            if (type.equals("All") || status.equals(type)){
                 System.out.println(task.toString());
             }
         }
-
-        // If no tasks found
-        if (tasks.isEmpty()) {
-            System.out.println("No tasks available.");
-        }
     }
 
-     // Finds a task by ID
-     public Optional<Task> findTask(String id) {
-        try {
-            int taskId = Integer.parseInt(id);
-            return tasks.stream()
-                        .filter(task -> task.getId() == taskId)
-                        .findFirst();
-        } 
-        catch (NumberFormatException e) {
-            System.out.println("Invalid task ID: " + id);
-            return Optional.empty();
-        }
+    public Optional<Task> findTask(String id) {
+        return tasks.stream().filter((task) -> task.getId() == Integer.parseInt(id)).findFirst();
     }
+
 
 }
